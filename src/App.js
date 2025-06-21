@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import {
@@ -109,11 +110,68 @@ function AddExpenseModal({ isOpen, onClose, onAdd, balance }) {
   );
 }
 
+function EditExpenseModal({ isOpen, onClose, onEdit, original, balance }) {
+  const [data, setData] = useState({ ...original });
+  const { enqueueSnackbar } = useSnackbar();
+
+  useEffect(() => {
+    setData({ ...original });
+  }, [original]);
+
+  const handleUpdate = (e) => {
+    e.preventDefault();
+    if (!data.title || !data.amount || !data.category) {
+      enqueueSnackbar("All fields are required", { variant: "warning" });
+      return;
+    }
+    const newAmount = parseFloat(data.amount);
+    const available = balance + original.amount;
+
+    if (newAmount > available) {
+      enqueueSnackbar("Insufficient balance", { variant: "error" });
+      return;
+    }
+
+    onEdit({ ...data, amount: newAmount });
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} className="modal" overlayClassName="overlay">
+      <h2>Edit Expense</h2>
+      <form onSubmit={handleUpdate}>
+        <input
+          value={data.title}
+          onChange={(e) => setData({ ...data, title: e.target.value })}
+        />
+        <input
+          type="number"
+          value={data.amount}
+          onChange={(e) => setData({ ...data, amount: e.target.value })}
+        />
+        <select
+          value={data.category}
+          onChange={(e) => setData({ ...data, category: e.target.value })}
+        >
+          <option value="">Select Category</option>
+          {CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        <button type="submit">Update</button>
+      </form>
+    </Modal>
+  );
+}
+
 function App() {
   const [balance, setBalance] = useState(() => parseFloat(localStorage.getItem("balance")) || 5000);
   const [expenses, setExpenses] = useState(() => JSON.parse(localStorage.getItem("expenses")) || []);
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editData, setEditData] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("balance", balance.toString());
@@ -127,6 +185,15 @@ function App() {
   const handleAddExpense = (expense) => {
     setExpenses([...expenses, { ...expense, id: Date.now() }]);
     setBalance(balance - expense.amount);
+  };
+
+  const handleEditExpense = (updated) => {
+    const prev = expenses.find((e) => e.id === updated.id);
+    const diff = updated.amount - prev.amount;
+    setExpenses((prevList) =>
+      prevList.map((e) => (e.id === updated.id ? updated : e))
+    );
+    setBalance((prevBal) => prevBal - diff);
   };
 
   const handleDelete = (id) => {
@@ -198,6 +265,7 @@ function App() {
                 <button onClick={() => handleDelete(e.id)} data-testid={`delete-${e.id}`}>
                   <FaTrash />
                 </button>
+                <button onClick={() => setEditData(e)}>✏️</button>
               </li>
             ))}
           </ul>
@@ -214,6 +282,15 @@ function App() {
           onAdd={handleAddExpense}
           balance={balance}
         />
+        {editData && (
+          <EditExpenseModal
+            isOpen={!!editData}
+            original={editData}
+            onEdit={handleEditExpense}
+            onClose={() => setEditData(null)}
+            balance={balance}
+          />
+        )}
       </div>
     </SnackbarProvider>
   );
