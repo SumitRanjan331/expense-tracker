@@ -1,4 +1,4 @@
-// App.js with test-case fixes to pass Crio-style validations
+
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import {
