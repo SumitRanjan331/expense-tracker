@@ -1,4 +1,4 @@
-
+// App.js updated with semantic correctness and test-case label requirements
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import {
@@ -40,8 +40,9 @@ function AddBalanceModal({ isOpen, onClose, onAdd }) {
       <form onSubmit={handleSubmit}>
         <input
           data-testid="income-amount-input"
+          name="income"
           type="number"
-          placeholder="Amount"
+          placeholder="Income Amount"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
@@ -54,12 +55,12 @@ function AddBalanceModal({ isOpen, onClose, onAdd }) {
 }
 
 function AddExpenseModal({ isOpen, onClose, onAdd, balance }) {
-  const [data, setData] = useState({ title: "", amount: "", category: "" });
+  const [data, setData] = useState({ title: "", amount: "", category: "", date: "" });
   const { enqueueSnackbar } = useSnackbar();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!data.title || !data.amount || !data.category) {
+    if (!data.title || !data.amount || !data.category || !data.date) {
       enqueueSnackbar("All fields are required", { variant: "warning" });
       return;
     }
@@ -69,7 +70,7 @@ function AddExpenseModal({ isOpen, onClose, onAdd, balance }) {
       return;
     }
     onAdd({ ...data, amount });
-    setData({ title: "", amount: "", category: "" });
+    setData({ title: "", amount: "", category: "", date: "" });
     onClose();
   };
 
@@ -78,20 +79,20 @@ function AddExpenseModal({ isOpen, onClose, onAdd, balance }) {
       <h2>Add Expense</h2>
       <form onSubmit={handleSubmit}>
         <input
-          data-testid="expense-title"
+          name="title"
           placeholder="Title"
           value={data.title}
           onChange={(e) => setData({ ...data, title: e.target.value })}
         />
         <input
-          data-testid="expense-amount"
+          name="price"
           type="number"
           placeholder="Amount"
           value={data.amount}
           onChange={(e) => setData({ ...data, amount: e.target.value })}
         />
         <select
-          data-testid="expense-category"
+          name="category"
           value={data.category}
           onChange={(e) => setData({ ...data, category: e.target.value })}
         >
@@ -102,65 +103,13 @@ function AddExpenseModal({ isOpen, onClose, onAdd, balance }) {
             </option>
           ))}
         </select>
-        <button data-testid="submit-expense-btn" type="submit">
-          Add Expense
-        </button>
-      </form>
-    </Modal>
-  );
-}
-
-function EditExpenseModal({ isOpen, onClose, onEdit, original, balance }) {
-  const [data, setData] = useState({ ...original });
-  const { enqueueSnackbar } = useSnackbar();
-
-  useEffect(() => {
-    setData({ ...original });
-  }, [original]);
-
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    if (!data.title || !data.amount || !data.category) {
-      enqueueSnackbar("All fields are required", { variant: "warning" });
-      return;
-    }
-    const newAmount = parseFloat(data.amount);
-    const available = balance + original.amount;
-
-    if (newAmount > available) {
-      enqueueSnackbar("Insufficient balance", { variant: "error" });
-      return;
-    }
-
-    onEdit({ ...data, amount: newAmount });
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} className="modal" overlayClassName="overlay">
-      <h2>Edit Expense</h2>
-      <form onSubmit={handleUpdate}>
         <input
-          value={data.title}
-          onChange={(e) => setData({ ...data, title: e.target.value })}
+          name="date"
+          type="date"
+          value={data.date}
+          onChange={(e) => setData({ ...data, date: e.target.value })}
         />
-        <input
-          type="number"
-          value={data.amount}
-          onChange={(e) => setData({ ...data, amount: e.target.value })}
-        />
-        <select
-          value={data.category}
-          onChange={(e) => setData({ ...data, category: e.target.value })}
-        >
-          <option value="">Select Category</option>
-          {CATEGORIES.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-        <button type="submit">Update</button>
+        <button type="submit">Add Expense</button>
       </form>
     </Modal>
   );
@@ -171,7 +120,6 @@ function App() {
   const [expenses, setExpenses] = useState(() => JSON.parse(localStorage.getItem("expenses")) || []);
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
-  const [editData, setEditData] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("balance", balance.toString());
@@ -185,15 +133,6 @@ function App() {
   const handleAddExpense = (expense) => {
     setExpenses([...expenses, { ...expense, id: Date.now() }]);
     setBalance(balance - expense.amount);
-  };
-
-  const handleEditExpense = (updated) => {
-    const prev = expenses.find((e) => e.id === updated.id);
-    const diff = updated.amount - prev.amount;
-    setExpenses((prevList) =>
-      prevList.map((e) => (e.id === updated.id ? updated : e))
-    );
-    setBalance((prevBal) => prevBal - diff);
   };
 
   const handleDelete = (id) => {
@@ -214,17 +153,17 @@ function App() {
         <div className="card-container">
           <div className="card">
             <h2>
-              Wallet Balance: <span className="green">₹{balance}</span>
+              Wallet Balance: ₹{balance.toFixed(2)}
             </h2>
-            <button className="btn green" onClick={() => setShowAddIncome(true)}>
+            <button type="button" className="btn green" onClick={() => setShowAddIncome(true)}>
               + Add Income
             </button>
           </div>
           <div className="card">
             <h2>
-              Expenses: <span className="yellow">₹{expenses.reduce((a, b) => a + b.amount, 0)}</span>
+              Expenses: ₹{expenses.reduce((a, b) => a + b.amount, 0).toFixed(2)}
             </h2>
-            <button className="btn red" onClick={() => setShowAddExpense(true)}>
+            <button type="button" className="btn red" onClick={() => setShowAddExpense(true)}>
               + Add Expense
             </button>
           </div>
@@ -261,11 +200,10 @@ function App() {
           <ul data-testid="transaction-list">
             {expenses.map((e) => (
               <li key={e.id} data-testid="transaction-item">
-                {e.title} - ₹{e.amount} [{e.category}]
+                {e.title} - ₹{e.amount} [{e.category}] on {e.date}
                 <button onClick={() => handleDelete(e.id)} data-testid={`delete-${e.id}`}>
                   <FaTrash />
                 </button>
-                <button onClick={() => setEditData(e)}>✏️</button>
               </li>
             ))}
           </ul>
@@ -282,15 +220,6 @@ function App() {
           onAdd={handleAddExpense}
           balance={balance}
         />
-        {editData && (
-          <EditExpenseModal
-            isOpen={!!editData}
-            original={editData}
-            onEdit={handleEditExpense}
-            onClose={() => setEditData(null)}
-            balance={balance}
-          />
-        )}
       </div>
     </SnackbarProvider>
   );
