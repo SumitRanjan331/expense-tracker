@@ -1,4 +1,4 @@
-// App.js updated with semantic correctness and test-case label requirements
+
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import {
